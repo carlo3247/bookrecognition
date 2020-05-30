@@ -1,0 +1,5 @@
+<resources>
+    <string name="app_name">bookrecognition</string>
+    <string name="select_image_for_text_recognition">Select image for text recognition</string>
+    <string name="find_text_button">Find text</string>
+</resources>
