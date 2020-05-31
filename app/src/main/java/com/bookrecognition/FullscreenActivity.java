@@ -22,6 +22,8 @@ import com.google.firebase.ml.vision.common.FirebaseVisionImage;
 import com.google.firebase.ml.vision.common.FirebaseVisionImageMetadata;
 import com.google.firebase.ml.vision.text.FirebaseVisionText;
 import com.google.firebase.ml.vision.text.FirebaseVisionTextRecognizer;
+import com.otaliastudios.cameraview.CameraListener;
+import com.otaliastudios.cameraview.CameraOptions;
 import com.otaliastudios.cameraview.CameraView;
 import com.otaliastudios.cameraview.frame.Frame;
 import com.otaliastudios.cameraview.frame.FrameProcessor;
@@ -70,7 +72,13 @@ public class FullscreenActivity extends AppCompatActivity {
         mCameraView = findViewById(R.id.camera_view);
         mGraphicOverlay = findViewById(R.id.graphic_overlay);
 
+        // change resolution and add more processing threads
         mCameraView.setLifecycleOwner(this);
+        mCameraView.setFrameProcessingExecutors(2);
+        mCameraView.setFrameProcessingPoolSize(3);
+        mCameraView.setFrameProcessingMaxHeight(640);
+        mCameraView.setFrameProcessingMaxWidth(480);
+        mGraphicOverlay.setCameraInfo(mCameraView.getFrameProcessingMaxWidth(), mCameraView.getFrameProcessingMaxHeight(), 1);
         mCameraView.setOnTouchListener(new View.OnTouchListener() {
             @Override
             public boolean onTouch(View view, MotionEvent event) {
@@ -112,36 +120,21 @@ public class FullscreenActivity extends AppCompatActivity {
      * Text Recognition
      */
     private FirebaseVisionImage convertFrameToFirebaseVisionImage(Frame frame) {
-        FirebaseVisionImageMetadata metaData = new FirebaseVisionImageMetadata.Builder()
-                .setFormat(FirebaseVisionImageMetadata.IMAGE_FORMAT_NV21)
-                .setRotation(FirebaseVisionImageMetadata.ROTATION_90)
-                .setHeight(frame.getSize().getHeight())
-                .setWidth(frame.getSize().getWidth())
-                .build();
-        // Not supporting android.media.Image https://natario1.github.io/CameraView/docs/frame-processing
-        byte[] data = frame.getData();
-        return FirebaseVisionImage.fromByteArray(data, metaData);
-    }
-
-    private void runTextRecognition(FirebaseVisionImage image) {
-        FirebaseVisionTextRecognizer recognizer = FirebaseVision.getInstance()
-                .getOnDeviceTextRecognizer();
-        recognizer.processImage(image)
-                .addOnSuccessListener(
-                        new OnSuccessListener<FirebaseVisionText>() {
-                            @Override
-                            public void onSuccess(FirebaseVisionText texts) {
-                                processTextRecognitionResult(texts);
-                            }
-                        })
-                .addOnFailureListener(
-                        new OnFailureListener() {
-                            @Override
-                            public void onFailure(@NonNull Exception e) {
-                                // Task failed with an exception
-                                e.printStackTrace();
-                            }
-                        });
+        if (frame.getDataClass() == byte[].class) {
+            FirebaseVisionImageMetadata metaData = new FirebaseVisionImageMetadata.Builder()
+                    .setFormat(FirebaseVisionImageMetadata.IMAGE_FORMAT_NV21)
+                    .setRotation(FirebaseVisionImageMetadata.ROTATION_90)
+                    .setHeight(frame.getSize().getHeight())
+                    .setWidth(frame.getSize().getWidth())
+                    .build();
+            byte[] data = frame.getData();
+            return FirebaseVisionImage.fromByteArray(data, metaData);
+        } else if (frame.getDataClass() == Image.class) {
+            Image data = frame.getData();
+            return FirebaseVisionImage.fromMediaImage(data, FirebaseVisionImageMetadata.ROTATION_90);
+        }
+        // should not happen https://natario1.github.io/CameraView/docs/frame-processing
+        return null;
     }
 
     private void processTextRecognitionResult(FirebaseVisionText texts) {

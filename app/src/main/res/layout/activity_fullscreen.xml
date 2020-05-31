@@ -20,14 +20,18 @@
         android:layout_height="match_parent"
         android:clickable="false"
         android:keepScreenOn="true"
-        app:cameraAudio="off">
+        app:cameraAudio="off"
+        app:cameraEngine="camera2"
+        app:cameraExperimental="true"
+        app:cameraFrameProcessingPoolSize="3"
+        app:cameraPreview="glSurface">
+
+        <com.bookrecognition.GraphicOverlay
+            android:id="@+id/graphic_overlay"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent" />
 
     </com.otaliastudios.cameraview.CameraView>
-
-    <com.bookrecognition.GraphicOverlay
-        android:id="@+id/graphic_overlay"
-        android:layout_width="match_parent"
-        android:layout_height="match_parent" />
 
     <FrameLayout
         android:layout_width="match_parent"
